@@ -57,9 +57,11 @@ public class MainViewModel : BaseViewModel
         LoginCommand = new RelayCommand(_ => _ = LoginAsync());
         LogoutCommand = new RelayCommand(_ => { IsLoggedIn = false; CurrentUser = null; Email = string.Empty; Password = string.Empty; StatusMessage = "Bạn đã đăng xuất."; });
         ToggleRegisterCommand = new RelayCommand(_ => { IsRegistering = !IsRegistering; StatusMessage = IsRegistering ? "Tạo tài khoản mới (role mặc định: student)." : "Đăng nhập bằng tài khoản của bạn."; });
-        LoadTopicsCommand = new RelayCommand(_ => _ = LoadTopicsAsync(), _ => IsLoggedIn);
-        GenerateTopicCommand = new RelayCommand(_ => _ = GenerateTopicAsync(), _ => IsLoggedIn && !string.IsNullOrWhiteSpace(NewTopicName));
-        OpenTopicCommand = new RelayCommand(_ => _ = OpenSelectedTopicAsync(), _ => IsLoggedIn && SelectedTopic is not null);
+        LoadTopicsCommand = new RelayCommand(_ => _ = LoadTopicsAsync(), _ => IsStudent);
+        GenerateTopicCommand = new RelayCommand(_ => _ = GenerateTopicAsync(), _ => IsStudent && !string.IsNullOrWhiteSpace(NewTopicName));
+        OpenTopicCommand = new RelayCommand(_ => _ = OpenSelectedTopicAsync(), _ => IsStudent && SelectedTopic is not null);
+        GenerateBatchCommand = new RelayCommand(_ => _ = GenerateBatchAsync(), _ => IsStudent && SelectedTopic is not null);
+        DeleteTopicCommand = new RelayCommand(_ => _ = DeleteTopicAsync(), _ => IsStudent && SelectedTopic is not null);
         RefreshF4Command = new RelayCommand(_ => _ = LoadF4Async(), _ => IsLoggedIn);
         CreateAssignmentCommand = new RelayCommand(_ => _ = CreateAssignmentAsync(), _ => IsRole("expert") && !string.IsNullOrWhiteSpace(AssignmentTitle) && !string.IsNullOrWhiteSpace(AssignmentInstructions));
         DeleteAssignmentCommand = new RelayCommand(_ => _ = DeleteAssignmentAsync(), _ => IsRole("expert") && SelectedAssignment is not null);
@@ -175,6 +177,8 @@ public class MainViewModel : BaseViewModel
     public ICommand LoadTopicsCommand { get; }
     public ICommand GenerateTopicCommand { get; }
     public ICommand OpenTopicCommand { get; }
+    public ICommand GenerateBatchCommand { get; }
+    public ICommand DeleteTopicCommand { get; }
     public ICommand RefreshF4Command { get; }
     public ICommand CreateAssignmentCommand { get; }
     public ICommand DeleteAssignmentCommand { get; }
@@ -296,11 +300,61 @@ public class MainViewModel : BaseViewModel
         await _apiClient.MarkCardLearnedAsync(card.Id, CurrentUser!.Id);
     }
 
+    // F2.3: Thêm đợt từ vựng mới vào chủ đề đã có
+    private async Task GenerateBatchAsync()
+    {
+        if (SelectedTopic is null || CurrentUser is null) return;
+        try
+        {
+            StatusMessage = $"Đang tạo thêm 15 từ vựng cho chủ đề «{SelectedTopic.Name}»...";
+            var result = await _apiClient.GenerateBatchAsync(SelectedTopic.Id, CurrentUser.Id);
+            if (result?.Success != true)
+            {
+                StatusMessage = "Không sinh được từ mới. Thử lại hoặc chủ đề đã đầy từ.";
+                return;
+            }
+            SelectedTopic.CardCount = result.TotalCards;
+            OnPropertyChanged(nameof(SelectedTopic));
+            await OpenSelectedTopicAsync();
+            StatusMessage = $"Đã thêm {result.NewCards.Count} từ mới. Tổng: {result.TotalCards} thẻ.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Không thể thêm từ: {ex.Message}";
+        }
+    }
+
+    // F2.5: Xóa chủ đề và toàn bộ flashcard liên quan
+    private async Task DeleteTopicAsync()
+    {
+        if (SelectedTopic is null || CurrentUser is null) return;
+        var topicToDelete = SelectedTopic;
+        try
+        {
+            StatusMessage = $"Đang xóa chủ đề «{topicToDelete.Name}»...";
+            var ok = await _apiClient.DeleteTopicAsync(topicToDelete.Id, CurrentUser.Id);
+            if (!ok) { StatusMessage = "Xóa chủ đề thất bại."; return; }
+            Topics.Remove(topicToDelete);
+            SelectedTopic = Topics.FirstOrDefault();
+            if (SelectedTopic is not null)
+                await OpenSelectedTopicAsync();
+            else
+                FlashcardSession.SetCards(new System.Collections.Generic.List<EnglishFlashcard>());
+            StatusMessage = $"Đã xóa chủ đề «{topicToDelete.Name}».";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Lỗi khi xóa chủ đề: {ex.Message}";
+        }
+    }
+
     private void RaiseCommandStates()
     {
         if (LoadTopicsCommand is RelayCommand load) load.RaiseCanExecuteChanged();
         if (GenerateTopicCommand is RelayCommand gen) gen.RaiseCanExecuteChanged();
         if (OpenTopicCommand is RelayCommand open) open.RaiseCanExecuteChanged();
+        if (GenerateBatchCommand is RelayCommand batch) batch.RaiseCanExecuteChanged();
+        if (DeleteTopicCommand is RelayCommand delTopic) delTopic.RaiseCanExecuteChanged();
         foreach (var command in new[] { RefreshF4Command, CreateAssignmentCommand, DeleteAssignmentCommand, SubmitWorkCommand, GradeWorkCommand, RefreshAdminCommand, SyncMysqlCommand, SaveUserCommand, SaveAiConfigCommand, AddCurriculumCommand, DeleteCurriculumCommand })
             if (command is RelayCommand relay) relay.RaiseCanExecuteChanged();
     }

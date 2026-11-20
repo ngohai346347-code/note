@@ -68,14 +68,25 @@
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Name}" Width="220"/>
-                                        <TextBlock Text="{Binding Level}" Foreground="#93C5FD"/>
+                                        <TextBlock Text="{Binding Name}" Width="175"/>
+                                        <TextBlock Text="{Binding Level}" Foreground="#93C5FD" Width="38"/>
+                                        <TextBlock Foreground="#64748B" FontSize="11">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}({0}t)">
+                                                    <Binding Path="CardCount"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
                                     </StackPanel>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
 
-                        <Button Content="Mở chủ đề" Command="{Binding OpenTopicCommand}" Margin="0,8,0,0" Padding="8"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="Mở chủ đề" Command="{Binding OpenTopicCommand}" Padding="8" Width="110"/>
+                            <Button Content="+ 15 từ mới" Command="{Binding GenerateBatchCommand}" Margin="6,0,0,0" Padding="8" Width="110" ToolTip="Sinh thêm 15 từ vựng mới cho chủ đề đang chọn"/>
+                            <Button Content="🗑 Xóa" Command="{Binding DeleteTopicCommand}" Margin="6,0,0,0" Padding="8" Width="70" Foreground="#FCA5A5" ToolTip="Xóa chủ đề và toàn bộ flashcard liên quan"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>

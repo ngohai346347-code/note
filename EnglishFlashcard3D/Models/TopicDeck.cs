@@ -6,5 +6,6 @@ public class TopicDeck
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string Level { get; set; } = "B1";
+    public int CardCount { get; set; }
     public List<EnglishFlashcard> Cards { get; set; } = new();
 }

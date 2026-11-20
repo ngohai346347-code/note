@@ -2608,7 +2608,7 @@
   "submissions": [],
   "consultations": [],
   "ai_config": {
-    "model_name": "gemini-2.5-flash",
+    "model_name": "gemini-3.8-flash",
     "temperature": 0.4,
     "max_output_tokens": 4096,
     "anti_repetition": true,

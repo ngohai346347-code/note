@@ -52,6 +52,9 @@ public class ApiTopic
 
     [JsonPropertyName("level")]
     public string Level { get; set; } = "ALL";
+
+    [JsonPropertyName("card_count")]
+    public int CardCount { get; set; }
 }
 
 public class GenerateTopicResponse
@@ -61,6 +64,21 @@ public class GenerateTopicResponse
 
     [JsonPropertyName("topic")]
     public ApiTopic? Topic { get; set; }
+}
+
+public class GenerateBatchResponse
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+
+    [JsonPropertyName("topic")]
+    public ApiTopic? Topic { get; set; }
+
+    [JsonPropertyName("new_cards")]
+    public List<ApiVocabCard> NewCards { get; set; } = new();
+
+    [JsonPropertyName("total_cards")]
+    public int TotalCards { get; set; }
 }
 
 public class TopicCardsResponse
@@ -189,7 +207,7 @@ public class UsersResponse { [JsonPropertyName("users")] public List<AuthUser> U
 public class AiConfigResponse { [JsonPropertyName("config")] public ApiAiConfig Config { get; set; } = new(); }
 public class ApiAiConfig
 {
-    [JsonPropertyName("model_name")] public string Model_Name { get; set; } = "gemini-2.5-flash";
+    [JsonPropertyName("model_name")] public string Model_Name { get; set; } = "gemini-3.8-flash";
     [JsonPropertyName("temperature")] public double Temperature { get; set; } = 0.4;
     [JsonPropertyName("max_output_tokens")] public int Max_Output_Tokens { get; set; } = 4096;
     [JsonPropertyName("anti_repetition")] public bool Anti_Repetition { get; set; } = true;

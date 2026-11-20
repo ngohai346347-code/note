@@ -154,6 +154,14 @@ public class JsonDatabase
     }
     public void AddTopic(Topic topic) { lock (_sync) { _data.Topics.Insert(0, topic); Save(); } }
     public void DeleteTopic(string topicId) { lock (_sync) { _data.Topics = _data.Topics.Where(t => t.Id != topicId).ToList(); _data.Vocab_Cards = _data.Vocab_Cards.Where(c => c.Topic_Id != topicId).ToList(); Save(); } }
+    public void UpdateTopicCardCount(string topicId)
+    {
+        lock (_sync)
+        {
+            var topic = _data.Topics.FirstOrDefault(t => t.Id == topicId);
+            if (topic is not null) { topic.Card_Count = _data.Vocab_Cards.Count(c => c.Topic_Id == topicId); Save(); }
+        }
+    }
 
     public List<VocabCard> GetCardsByTopic(string topicId) => _data.Vocab_Cards.Where(c => c.Topic_Id == topicId).ToList();
     public List<VocabCard> GetAllCards() => _data.Vocab_Cards;

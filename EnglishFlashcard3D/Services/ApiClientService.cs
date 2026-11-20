@@ -49,7 +49,8 @@ public class ApiClientService
         {
             Id = t.Id,
             Name = t.Name,
-            Level = t.Level
+            Level = t.Level,
+            CardCount = t.CardCount
         }).ToList();
     }
 
@@ -77,8 +78,37 @@ public class ApiClientService
         {
             Id = model.Topic.Id,
             Name = model.Topic.Name,
-            Level = model.Topic.Level
+            Level = model.Topic.Level,
+            CardCount = model.Topic.CardCount
         };
+    }
+
+    /// <summary>F2.3: Sinh đợt thêm 15 từ mới cho topic đã có, chống trùng từ.</summary>
+    public async Task<GenerateBatchResponse?> GenerateBatchAsync(string topicId, string userId)
+    {
+        var payload = JsonSerializer.Serialize(new { topic_id = topicId, user_id = userId });
+        using var content = new StringContent(payload, Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync("api/vocab/generate-batch", content);
+        var json = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            var message = $"API trả về HTTP {(int)response.StatusCode}.";
+            try
+            {
+                using var error = JsonDocument.Parse(json);
+                if (error.RootElement.TryGetProperty("error", out var detail)) message = detail.GetString() ?? message;
+            }
+            catch (JsonException) { }
+            throw new HttpRequestException(message);
+        }
+        return JsonSerializer.Deserialize<GenerateBatchResponse>(json, JsonOptions);
+    }
+
+    /// <summary>F2.5: Xóa toàn bộ chủ đề và flashcard liên quan.</summary>
+    public async Task<bool> DeleteTopicAsync(string topicId, string userId)
+    {
+        var response = await _httpClient.DeleteAsync($"api/vocab/{Uri.EscapeDataString(topicId)}?user_id={Uri.EscapeDataString(userId)}");
+        return response.IsSuccessStatusCode;
     }
 
     public async Task<List<EnglishFlashcard>> GetTopicCardsAsync(string topicId, string userId)

@@ -141,7 +141,7 @@ public class VideoSession
 
 public class AiConfig
 {
-    public string Model_Name { get; set; } = "gemini-2.5-flash";
+    public string Model_Name { get; set; } = "gemini-3.8-flash";
     public double Temperature { get; set; } = 0.4;
     public int Max_Output_Tokens { get; set; } = 4096;
     public bool Anti_Repetition { get; set; } = true;
